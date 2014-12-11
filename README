@@ -1,0 +1,78 @@
+My evaluation of my super chunker's results:
+
+I decided to limit my interpreter to context-free grammar and I did not build any functionality for 
+regular expressions.  Rules like “Y-> XYZ” are allowed, and the result would be that wherever “XYZ” is found, 
+they will be given a new parent, “Y”.  The way I accomplish is that my algorithm searches through the tree for
+nodes that are brothers, where I define “brothers” as nodes who have the same direct parent.  It then looks at
+each group of brothers see if the rule under consideration is instantiated by the brothers.  When a group of 
+brothers are found to instantiate a rule, the tree is modified by creating a new parent node at the left-most
+brother in the group.  Then the program sets the group of brothers as children of this new parent node.  
+The algorithm then starts over, looking for new groups of brothers in the modified tree, and repeats the same process,
+for each chunking rule defined in chunker.main().  
+
+Rules used by the algorithm:
+I chose to use the following list of rules to create super-chunk noun phrases: 
+["NP , NP CC NP", "NP CC NP", "NP IN NP", "NP TO NP", "NP NP", "NP NN NP", "NP , NP ,"]. 
+In general, I found the results were mixed.  Most new super-chunks were noun phrases, although a few were not. 
+I believe that the rule that had the greatest overall effect was the simplest one: “NP -> NP NP”.  
+With this rule, my recall seemed to go up substantially, but my precision would drop off substantially as well. 
+I did not notice any other rules that had this kind of effect.  
+I also was able to create smaller chunks by implementing rules such as NP -> DT NN | JJ NN | DT NP.   
+
+Print out:
+For the most part, I was able to print out my results to a file (called “superchunks.txt”) that preserved the 
+tree structure quite well.  In order to read this file properly, the window should be maximized.  In the print out, 
+“<NP>”, rather than “NP”, and “<IN>”, rather than “IN”, refers to parts-of-speech that were chunked by my algorithm. 
+By using this notation, and by usage of the tabular key to indicate a deeper level in the tree, one can fairly
+easily see the successes, and sometimes failures, of my chunking algorithm in its effect on the tree structures.  
+An example of successful implementation of rules “NP -> NP IN NP” and “NP -> NP , NP , “ is the following 
+example of the text “Equitable of Iowa Cos., Des Moines,”.
+(NP
+		(<NP>
+			(<NP>				(Equitable NNP)				)
+			(of <IN>)
+			(<NP>				(Iowa NNP)				(Cos. NNP)				)
+			)
+		(, <,>)
+		(<NP>			(Des NNP)			(Moines NNP)			)
+		(, <,>)		)
+Examples of problematic chunks, however, were the following:
+	
+
+
+“What it”:
+(NP
+		(<NP>			(what WP)			)
+
+		(<NP>			(it PRP)			)
+
+Obviously, this is incorrect and provides useless information.
+
+A more complex, problematic chunk is the following parse of “publicly traded company through the 
+exchange of units of the partnership for common shares.”  
+
+	(publicly RB)	(traded VBN)
+	(NP
+		(<NP>
+			(<NP>
+				(<NP>
+					(<NP>					(company NN)						)
+					(through <IN>)
+					(<NP>					(the DT)					(exchange NN)					)
+				)
+				(of <IN>)
+				(<NP>					(units NNS)					)
+				)
+			(of <IN>)
+			(<NP>				(the DT)				(partnership NN)				)
+			)
+		(for <IN>)
+		(<NP>			(common JJ)			(shares NNS)			)
+		)
+In this example, despite the repeated successful implementation of “NP -> NP IN NP,” our final NP chunk 
+is the incorrect phrase: “company through the exchange of units of the partnership for common shares.”  
+If we add “NP -> RB VBN NP” to the rules in order to cover this case, no other instance of “RB VBN NP” is covered, 
+correctly or incorrectly, which seems to indicate how limited our parsing system is without usage of regular
+expression characters or some other data, such as using clues from the words themselves, instead of only using 
+the part-of-speech tags.  This latter feature might be implemented by passing up the head word of each phrase to 
+complement the information from the POS tags.
